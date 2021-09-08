@@ -55,10 +55,10 @@ public class NativeLoader {
       String tmpDir = tmpDirLocation();
       if (is64bit && (isMac || isLinux || isWindows)) {
         final String extension = "." + (isMac ? "dylib" : isWindows ? "dll" : "so");
-        final String libName = (isWindows ? "" : "lib") + "sbtipcsocket" + extension;
-        final String prefix = isMac ? "darwin" : isLinux ? "linux" : "win32";
+        final String libName = "ipcsocket" + extension;
+        final String prefix = isMac ? "darwin" : isLinux ? "linux64" : "windows64";
 
-        final String resource = prefix + "/x86_64/" + libName;
+        final String resource = "META-INF/native/" + prefix + "/" + libName;
         final URL url = NativeLoader.class.getClassLoader().getResource(resource);
         if (url == null) throw new UnsatisfiedLinkError(resource + " not found on classpath");
         try {

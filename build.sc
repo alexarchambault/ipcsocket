@@ -1,5 +1,5 @@
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.9:0.1.1`
-import $file.settings, settings.{JniModule, JniPublishModule}
+import $file.settings, settings.{JniModule, JniPublishModule, JniResourcesModule}
 
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 
@@ -9,7 +9,7 @@ import mill.scalalib.publish._
 
 import scala.concurrent.duration.Duration
 
-object ipcsocket extends MavenModule with JniModule with JniPublishModule {
+object ipcsocket extends MavenModule with JniModule with JniPublishModule with JniResourcesModule {
   def ivyDeps = super.ivyDeps() ++ Seq(
     ivy"net.java.dev.jna:jna:5.8.0",
     ivy"net.java.dev.jna:jna-platform:5.8.0"

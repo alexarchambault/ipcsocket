@@ -40,7 +40,7 @@ trait JniModule
 
 private def q = "\""
 
-trait JniPublishModule extends PublishModule with JniWindowsPublish with JniUnixPublish {
+trait JniUploadDownloadArtifacts extends JniWindowsModule with JniUnixPublish {
   def jniFilesToCopy =
     if (Properties.isWin)
       T {
@@ -89,7 +89,42 @@ trait JniPublishModule extends PublishModule with JniWindowsPublish with JniUnix
   def jniArtifactDir = T {
     Option.empty[os.Path]
   }
+}
 
+trait JniResourcesModule extends JniUploadDownloadArtifacts with JniWindowsAddResources with JniUnixAddResources {
+  // FIXME Some duplication with JniPublishModule.jniArtifactDirExtraPublish
+  def jniArtifactDirExtraResources = T {
+    val destDir = T.dest / "resources"
+    val libraryName0 = jniLibraryName()
+    val dirOpt = jniArtifactDir()
+    dirOpt.toSeq.filter(os.isDir(_)).flatMap { dir =>
+      os.list(dir)
+        .filter(_.last.startsWith(libraryName0 + "-"))
+        .filter(os.isFile(_))
+        .map { f =>
+          val name = f.last.stripPrefix(libraryName0 + "-")
+          val idx = name.lastIndexOf('.')
+          assert(idx >= 0, s"no extension found in $f name")
+          val classifier = name.take(idx)
+          val osName = classifier match {
+            case "x86_64-apple-darwin" => "darwin"
+            case "x86_64-pc-linux" => "linux64"
+            case "x86_64-pc-win32" => "windows64"
+            case other => sys.error(s"Unrecognized classifier: $classifier")
+          }
+          val ext = name.drop(idx + 1)
+          val dest = destDir / "META-INF" / "native" / osName / s"$libraryName0.$ext"
+          os.copy.over(f, dest, createFolders = true)
+        }
+    }
+    PathRef(destDir)
+  }
+  def resources = T.sources {
+    super.resources() ++ Seq(jniArtifactDirExtraResources())
+  }
+}
+
+trait JniPublishModule extends PublishModule with JniUploadDownloadArtifacts with JniWindowsPublish with JniUnixPublish {
   def jniArtifactDirExtraPublish = T {
     val libraryName0 = jniLibraryName()
     val dirOpt = jniArtifactDir()
@@ -227,7 +262,7 @@ trait JniWindowsModule extends Module {
   }
 }
 
-trait JniWindowsAddResources extends JniWindowsModule {
+trait JniWindowsAddResources extends JavaModule with JniWindowsModule {
   def windowsResources = T.sources {
     val dll0 = windowsDll().path
     val dir = T.ctx().dest / "dll-resources"
@@ -242,6 +277,13 @@ trait JniWindowsAddResources extends JniWindowsModule {
       os.copy(dll0, dest, replaceExisting = true, createFolders = true)
     Seq(PathRef(dir))
   }
+  def resources =
+    if (Properties.isWin)
+      T.sources {
+        super.resources() ++ windowsResources()
+      }
+    else
+      super.resources
 }
 
 trait JniWindowsPublish extends JniWindowsModule {
@@ -526,7 +568,7 @@ trait JniUnixModule extends Module {
       }
 }
 
-trait JniUnixAddResources extends JniUnixModule {
+trait JniUnixAddResources extends JavaModule with JniUnixModule {
   def unixResources = T.sources {
     val dll0 = unixSo().path
     val dir = T.ctx().dest / "so-resources"
@@ -542,6 +584,13 @@ trait JniUnixAddResources extends JniUnixModule {
       os.copy(dll0, dest, replaceExisting = true, createFolders = true)
     Seq(PathRef(dir))
   }
+  def resources =
+    if (Properties.isLinux || Properties.isMac)
+      T.sources {
+        super.resources() ++ unixResources()
+      }
+    else
+      super.resources
 }
 
 trait JniUnixPublish extends JniUnixModule {
