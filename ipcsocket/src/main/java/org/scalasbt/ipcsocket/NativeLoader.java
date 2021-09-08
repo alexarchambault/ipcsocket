@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 
-class NativeLoader {
+public class NativeLoader {
   private static final AtomicBoolean loaded = new AtomicBoolean(false);
   private static final boolean isMac;
   private static final boolean isLinux;
@@ -38,7 +38,14 @@ class NativeLoader {
     return System.getProperty("sbt.ipcsocket.tmpdir", System.getProperty("java.io.tmpdir"));
   }
 
-  static void load() throws UnsatisfiedLinkError {
+  public static void assumeLoaded(boolean loaded) {
+    NativeLoader.loaded.set(loaded);
+  }
+  public static void assumeLoaded() {
+    assumeLoaded(true);
+  }
+
+  public static void load() throws UnsatisfiedLinkError {
     if (!loaded.get()) {
       final String os = System.getProperty("os.name", "").toLowerCase();
       final boolean isMac = os.startsWith("mac");
