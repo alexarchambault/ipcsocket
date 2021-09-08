@@ -4,7 +4,6 @@
 #include <winerror.h>
 #include <winnt.h>
 
-#define UNUSED __attribute__((unused))
 #define SECURITY_DESCRIPTOR_SIZE 64 * 1024
 #define HANDLE_OR_ERROR(h)                                                     \
   (h == (jlong)INVALID_HANDLE_VALUE) ? -((jlong)GetLastError()) : (jlong)h
@@ -42,7 +41,7 @@ BOOL WINAPI CancelIoEx(_In_ HANDLE hFile, _In_opt_ LPOVERLAPPED lpOverlapped);
 
 jlong JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CreateNamedPipeNative(
-    JNIEnv *env, UNUSED jobject object, jstring lpName, jint dwOpenMode,
+    JNIEnv *env, jobject object, jstring lpName, jint dwOpenMode,
     jint dwPipeMode, jint nMaxInstances, jint nOutBufferSize,
     jint nIntBufferSize, jint nDefaultTimeout, jint lpSecurityAttributes,
     jint security) {
@@ -85,7 +84,7 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CreateNamedPipeNati
 
 jlong JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CreateFileNative(
-    JNIEnv *env, UNUSED jobject object, jstring lpName) {
+    JNIEnv *env, jobject object, jstring lpName) {
   LPCWSTR name = (LPCWSTR)(*env)->GetStringChars(env, lpName, 0);
 
   HANDLE handle =
@@ -106,7 +105,7 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CreateFileNative(
 }
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_ConnectNamedPipeNative(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer,
+    JNIEnv *env, jobject object, jlong handlePointer,
     jlong overlappedPointer) {
   jboolean result =
       ConnectNamedPipe((HANDLE)handlePointer, (LPOVERLAPPED)overlappedPointer);
@@ -115,13 +114,13 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_ConnectNamedPipeNat
 
 jboolean JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_DisconnectNamedPipe(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer) {
+    JNIEnv *env, jobject object, jlong handlePointer) {
   return DisconnectNamedPipe((HANDLE)handlePointer);
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_readNative(
-    JNIEnv *env, UNUSED jobject object, jlong waitable, jlong hFile,
+    JNIEnv *env, jobject object, jlong waitable, jlong hFile,
     jbyteArray buffer, jint offset, jint length, jboolean strict) {
   HANDLE handle = (HANDLE)hFile;
   OVERLAPPED olap = {0};
@@ -166,7 +165,7 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_readNative(
  */
 void JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_writeNative(
-    JNIEnv *env, UNUSED jobject object, jlong waitable, jlong hHandle,
+    JNIEnv *env, jobject object, jlong waitable, jlong hHandle,
     jbyteArray buffer, jint offset, jint length) {
   HANDLE handle = (HANDLE)hHandle;
   OVERLAPPED olap;
@@ -203,13 +202,13 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_writeNative(
 
 JNIEXPORT jboolean JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CloseHandleNative(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer) {
+    JNIEnv *env, jobject object, jlong handlePointer) {
   return CloseHandle((HANDLE)handlePointer);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_GetOverlappedResultNative(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer,
+    JNIEnv *env, jobject object, jlong handlePointer,
     jlong overlappedPointer) {
   DWORD len = 0;
   return GetOverlappedResult((HANDLE)handlePointer,
@@ -218,13 +217,13 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_GetOverlappedResult
 
 JNIEXPORT jboolean JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CancelIoEx(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer) {
+    JNIEnv *env, jobject object, jlong handlePointer) {
   return CancelIoEx((HANDLE)handlePointer, NULL);
 }
 
 JNIEXPORT jlong JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CreateEventNative(
-    JNIEnv *env, UNUSED jobject object, jboolean manualReset,
+    JNIEnv *env, jobject object, jboolean manualReset,
     jboolean initialState, jstring lpName) {
   LPCWSTR name =
       lpName ? (LPCWSTR)(*env)->GetStringChars(env, lpName, 0) : NULL;
@@ -240,21 +239,21 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_CreateEventNative(
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_WaitForSingleObjectNative(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer, jint wait) {
+    JNIEnv *env, jobject object, jlong handlePointer, jint wait) {
   return WaitForSingleObject((HANDLE)handlePointer, wait);
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_GetLastError(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return GetLastError();
 }
 
 jlong JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_NewOverlappedNative(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong handlePointer) {
+    JNIEnv *env, jobject object, jlong handlePointer) {
   HANDLE handle = (HANDLE)handlePointer;
-  UNUSED LPOVERLAPPED op =
+  LPOVERLAPPED op =
       HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(OVERLAPPED));
   op->hEvent = handle;
   return (jlong)op;
@@ -262,74 +261,74 @@ Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_NewOverlappedNative
 
 void JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_DeleteOverlappedNative(
-    UNUSED JNIEnv *env, UNUSED jobject object, jlong overlappedPointer) {
+    JNIEnv *env, jobject object, jlong overlappedPointer) {
   HeapFree(GetProcessHeap(), 0, (void *)overlappedPointer);
 }
 
 // Constants follow:
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_ERROR_1IO_1PENDING(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return ERROR_IO_PENDING;
 };
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_ERROR_1NO_1DATA(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return ERROR_NO_DATA;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_ERROR_1PIPE_1CONNECTED(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return ERROR_PIPE_CONNECTED;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_FILE_1ALL_1ACCESS(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return FILE_ALL_ACCESS;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_FILE_1FLAG_1FIRST_1PIPE_1INSTANCE(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return FILE_FLAG_FIRST_PIPE_INSTANCE;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_FILE_1FLAG_1OVERLAPPED(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return FILE_FLAG_OVERLAPPED;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_FILE_1GENERIC_1READ(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return FILE_GENERIC_READ;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_GENERIC_1READ(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return GENERIC_READ;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_GENERIC_1WRITE(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return GENERIC_WRITE;
 }
 
 jint JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_PIPE_1ACCESS_1DUPLEX(
-    UNUSED JNIEnv *env, UNUSED jobject object) {
+    JNIEnv *env, jobject object) {
   return PIPE_ACCESS_DUPLEX;
 }
 
 jstring JNICALL
 Java_org_scalasbt_ipcsocket_JNIWin32NamedPipeLibraryProvider_getErrorMessage(
-    JNIEnv *env, UNUSED jobject object, jint errorCode) {
+    JNIEnv *env, jobject object, jint errorCode) {
   wchar_t buf[256];
   FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                  NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
