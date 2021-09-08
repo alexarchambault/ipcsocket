@@ -173,7 +173,7 @@ trait JniWindowsModule extends Module {
             |""".stripMargin
         val scriptPath = T.dest / "run-cl.bat"
         os.write.over(scriptPath, script.getBytes, createFolders = true)
-        os.proc(scriptPath).call(cwd = destDir)
+        os.proc(scriptPath).call(cwd = destDir, stdout = os.Inherit)
       }
       PathRef(output.resolveFrom(os.pwd))
     }
@@ -201,7 +201,7 @@ trait JniWindowsModule extends Module {
           |""".stripMargin
       val scriptPath = T.dest / "run-cl.bat"
       os.write.over(scriptPath, script.getBytes, createFolders = true)
-      os.proc(scriptPath).call(cwd = T.dest)
+      os.proc(scriptPath).call(cwd = T.dest, stdout = os.Inherit)
     }
     PathRef(dest)
   }
@@ -219,7 +219,7 @@ trait JniWindowsModule extends Module {
           |""".stripMargin
       val scriptPath = T.dest / "run-lib.bat"
       os.write.over(scriptPath, script.getBytes, createFolders = true)
-      os.proc(scriptPath).call(cwd = T.dest)
+      os.proc(scriptPath).call(cwd = T.dest, stdout = os.Inherit)
       if (!os.isFile(output))
         sys.error(s"Error: $output not created")
     }
@@ -301,16 +301,21 @@ trait JniUnixModule extends Module {
     else sys.error("Unrecognized OS")
   }
 
-  def unixCompile = T.persistent {
-    val destDir = T.ctx().dest / "obj"
-    val cFiles = unixCSources().flatMap { dir =>
+  private def unixDoCompile(
+    destDir: os.Path,
+    unixCSources: Seq[PathRef],
+    javaHome0: String,
+    gcc0: Seq[String],
+    extraOpts: Seq[String],
+    osDirName0: String
+  ): Seq[PathRef] = {
+    val cFiles = unixCSources.flatMap { dir =>
       if (os.isDir(dir.path))
         os.walk(dir.path)
           .filter(p => os.isFile(p) && p.last.endsWith(".c"))
       else
         Nil
     }
-    val javaHome0 = unixJavaHome()
     for (f <- cFiles) yield {
       if (!os.exists(destDir))
         os.makeDir.all(destDir)
@@ -318,10 +323,7 @@ trait JniUnixModule extends Module {
       val output = destDir / s"${f.last.stripSuffix(".c")}.o"
       val needsUpdate = !os.isFile(output) || os.mtime(output) < os.mtime(f)
       if (needsUpdate) {
-        val gcc0 = unixGcc()
         val relOutput = output.relativeTo(os.pwd)
-        val extraOpts = unixCOptions()
-        val osDirName0 = osDirName()
         val command = gcc0 ++ Seq("-c", "-Wall", "-fPIC", s"-I$javaHome0/include", s"-I$javaHome0/include/$osDirName0") ++ extraOpts ++ Seq(path, "-o", relOutput.toString)
         System.err.println(s"Running ${command.mkString(" ")}")
         val res = os
@@ -334,24 +336,78 @@ trait JniUnixModule extends Module {
     }
   }
 
-  def unixSo = T.persistent {
-    val dllName0 = unixLibName()
-    val destDir = T.ctx().dest / "libs"
+  def unixCompile =
+    T.persistent {
+      val destDir = T.ctx().dest / "obj"
+      val javaHome0 = unixJavaHome()
+      val gcc0 = unixGcc()
+      val extraOpts = unixCOptions()
+      val osDirName0 = osDirName()
+      unixDoCompile(
+        destDir,
+        unixCSources(),
+        javaHome0,
+        gcc0,
+        extraOpts,
+        osDirName0
+      )
+    }
+
+  def macosX86_64Compile =
+    T.persistent {
+      val destDir = T.ctx().dest / "obj"
+      val javaHome0 = unixJavaHome()
+      val gcc0 = unixGcc()
+      val extraOpts = unixCOptions() ++ Seq("-arch", "x86_64")
+      val osDirName0 = osDirName()
+      unixDoCompile(
+        destDir,
+        unixCSources(),
+        javaHome0,
+        gcc0,
+        extraOpts,
+        osDirName0
+      )
+    }
+
+  def macosArm64Compile =
+    T.persistent {
+      val destDir = T.ctx().dest / "obj"
+      val javaHome0 = unixJavaHome()
+      val gcc0 = unixGcc()
+      val extraOpts = unixCOptions() ++ Seq("-arch", "arm64")
+      val osDirName0 = osDirName()
+      unixDoCompile(
+        destDir,
+        unixCSources(),
+        javaHome0,
+        gcc0,
+        extraOpts,
+        osDirName0
+      )
+    }
+
+  private def generateUnixSo(
+    dllName0: String,
+    unixExtension0: String,
+    extraOpts: Seq[String],
+    objs: Seq[PathRef],
+    destDir: os.Path,
+    unixLinkingLibs: Seq[String],
+    gcc0: Seq[String]
+  ) = {
     if (!os.exists(destDir))
       os.makeDir.all(destDir)
-    val unixExtension0 = unixExtension()
     val dest = destDir / s"$dllName0.$unixExtension0"
     val relDest = dest.relativeTo(os.pwd)
-    val objs = unixCompile()
     val objsArgs = objs.map(o => o.path.relativeTo(os.pwd).toString).distinct
-    val libsArgs = unixLinkingLibs().map(l => "-l" + l)
+    val libsArgs = unixLinkingLibs.map(l => "-l" + l)
     val needsUpdate = !os.isFile(dest) || {
       val destMtime = os.mtime(dest)
       objs.exists(o => os.mtime(o.path) > destMtime)
     }
     if (needsUpdate) {
-      val gcc0 = unixGcc()
-      val command = gcc0 ++ Seq("-shared", "-o", relDest.toString) ++ objsArgs ++ libsArgs
+      val command = gcc0 ++ Seq("-shared") ++ extraOpts ++ Seq("-o", relDest.toString) ++ objsArgs ++ libsArgs
       System.err.println(s"Running ${command.mkString(" ")}")
       val res = os
         .proc(command.map(x => x: os.Shellable): _*)
@@ -361,14 +417,64 @@ trait JniUnixModule extends Module {
     }
     PathRef(dest)
   }
-  def unixA = T.persistent {
-    val dllName0 = unixLibName()
-    val destDir = T.ctx().dest / "libs"
+  def unixSo =
+    if (Properties.isMac)
+      T.persistent {
+        val dllName0 = unixLibName()
+        val unixExtension0 = unixExtension()
+        val x86Objs = macosX86_64Compile()
+        val armObjs = macosArm64Compile()
+        val destDir = T.dest / "libs"
+        val gcc0 = unixGcc()
+        val dest = destDir / s"$dllName0.dylib"
+        val x86DyLib = generateUnixSo(
+          dllName0,
+          unixExtension0,
+          Seq("-arch", "x86_64"),
+          x86Objs,
+          destDir / "x86_64",
+          unixLinkingLibs(),
+          gcc0
+        )
+        val armDyLib = generateUnixSo(
+          dllName0,
+          unixExtension0,
+          Seq("-arch", "arm64"),
+          armObjs,
+          destDir / "arm64",
+          unixLinkingLibs(),
+          gcc0
+        )
+        os.proc("lipo", "-create", "-o", dest, x86DyLib.path, armDyLib.path)
+          .call(cwd = destDir, stdout = os.Inherit)
+        PathRef(dest)
+      }
+    else
+      T.persistent {
+        val dllName0 = unixLibName()
+        val unixExtension0 = unixExtension()
+        val objs = unixCompile()
+        val destDir = T.dest / "libs"
+        val gcc0 = unixGcc()
+        generateUnixSo(
+          dllName0,
+          unixExtension0,
+          Nil,
+          objs,
+          destDir,
+          unixLinkingLibs(),
+          gcc0
+        )
+      }
+  private def buildUnixA(
+    dllName0: String,
+    destDir: os.Path,
+    objs: Seq[PathRef]
+  ) = {
     if (!os.exists(destDir))
       os.makeDir.all(destDir)
     val dest = destDir / s"$dllName0.a"
     val relDest = dest.relativeTo(os.pwd)
-    val objs = unixCompile()
     val objsArgs = objs.map(o => o.path.relativeTo(os.pwd).toString).distinct
     val needsUpdate = !os.isFile(dest) || {
       val destMtime = os.mtime(dest)
@@ -385,6 +491,39 @@ trait JniUnixModule extends Module {
     }
     PathRef(dest)
   }
+  def unixA =
+    if (Properties.isMac)
+      T.persistent {
+        val dllName0 = unixLibName()
+        val destDir = T.ctx().dest / "libs"
+        val x86Objs = macosX86_64Compile()
+        val armObjs = macosArm64Compile()
+        val x86A = buildUnixA(
+          dllName0,
+          destDir / "x86_64",
+          x86Objs
+        )
+        val armA = buildUnixA(
+          dllName0,
+          destDir / "arm64",
+          armObjs
+        )
+        val a = destDir / s"$dllName0.a"
+        os.proc("lipo", "-create", "-o", a, x86A.path, armA.path)
+          .call(cwd = destDir, stdout = os.Inherit)
+        PathRef(a)
+      }
+    else
+      T.persistent {
+        val dllName0 = unixLibName()
+        val destDir = T.ctx().dest / "libs"
+        val objs = unixCompile()
+        buildUnixA(
+          dllName0,
+          destDir,
+          objs
+        )
+      }
 }
 
 trait JniUnixAddResources extends JniUnixModule {
