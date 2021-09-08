@@ -572,7 +572,10 @@ trait JniUnixAddResources extends JavaModule with JniUnixModule {
   def unixResources = T.sources {
     val dll0 = unixSo().path
     val dir = T.ctx().dest / "so-resources"
-    val osName = osDirName()
+    val osName = osDirName() match {
+      case "linux" => "linux64"
+      case other => other
+    }
     val dllDir = dir / "META-INF" / "native" / osName
     val dest = dllDir / dll0.last
     val needsUpdate = !os.isFile(dest) || {
