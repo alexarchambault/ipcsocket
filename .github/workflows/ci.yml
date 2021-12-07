@@ -40,6 +40,29 @@ jobs:
         if-no-files-found: error
         retention-days: 2
 
+  test-static:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - uses: coursier/cache-action@v6.3
+    - uses: coursier/setup-action@v1.1.1
+      with:
+        jvm: 8
+    - name: Build and publish locally, list published files
+      run: ./mill -i __.publishLocal && find ~/.ivy2/local | sort
+    - name: Copy artifacts
+      run: ./mill -i __.jniCopyFilesTo artifacts/
+    - uses: actions/upload-artifact@v2.2.4
+      with:
+        name: artifacts
+        path: artifacts/
+        if-no-files-found: error
+        retention-days: 2
+
   release:
     needs: test
     runs-on: ubuntu-latest
