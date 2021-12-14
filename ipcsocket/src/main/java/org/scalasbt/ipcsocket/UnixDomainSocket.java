@@ -109,8 +109,16 @@ public class UnixDomainSocket extends Socket {
   }
 
   public void close() throws IOException {
-    shutdownInput();
-    shutdownOutput();
+    try {
+      shutdownInput();
+    } catch (IOException ex) {
+      // ignored
+    }
+    try {
+      shutdownOutput();
+    } catch (IOException ex) {
+      // ignored
+    }
     super.close();
     // This might not close the FD right away. In case we are about
     // to read or write on another thread, it will delay the close
