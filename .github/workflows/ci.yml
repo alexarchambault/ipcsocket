@@ -26,6 +26,8 @@ jobs:
       run: |
         sudo xcode-select -s "/Applications/Xcode_12.5.app" || sudo xcode-select -s "/Applications/Xcode_12.3.app" || ( ls /Applications; exit 1 )
         sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
+    - name: Run tests
+      run: ./mill -i __.test
     - name: Build and publish locally
       run: ./mill -i __.publishLocal
     - name: List published files
