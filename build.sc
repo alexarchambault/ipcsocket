@@ -81,6 +81,7 @@ object ipcsocket extends MavenModule with JniModule with JniPublishModule with J
     def ivyDeps = super.ivyDeps() ++ Seq(
       ivy"com.novocode:junit-interface:0.11"
     )
+    def testFramework = "com.novocode.junit.JUnitFramework"
   }
 }
 
