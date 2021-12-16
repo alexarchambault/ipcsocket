@@ -122,8 +122,8 @@ def doPublishSonatype(
     set.head
   }
   val publisher = new publish.SonatypePublisher(
-    uri = "https://oss.sonatype.org/service/local",
-    snapshotUri = "https://oss.sonatype.org/content/repositories/snapshots",
+    uri = "https://s01.oss.sonatype.org/service/local",
+    snapshotUri = "https://s01.oss.sonatype.org/content/repositories/snapshots",
     credentials = credentials,
     signed = true,
     gpgArgs = Seq("--detach-sign", "--batch=true", "--yes", "--pinentry-mode", "loopback", "--passphrase", pgpPassword, "--armor", "--use-agent"),
