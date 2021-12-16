@@ -68,7 +68,7 @@ object ipcsocket extends MavenModule with JniModule with JniPublishModule with J
   }
   def pomSettings = PomSettings(
     description = artifactName(),
-    organization = "com.github.alexarchambault.tmp.ipcsocket",
+    organization = "io.github.alexarchambault.tmp.ipcsocket",
     url = "https://github.com/alexarchambault/ipcsocket",
     licenses = Seq(License.`Apache-2.0`),
     versionControl = VersionControl.github("alexarchambault", "ipcsocket"),
