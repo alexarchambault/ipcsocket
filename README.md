@@ -1,31 +1,9 @@
-IPC Socket
-==========
+## Scala CLI fork of sbt/ipcsocket (discontinued)
 
-IPC Socket is a Java wrapper around interprocess communication (IPC) using `java.net.ServerSocket` and `java.net.Socket` as the API.
+This repository is a fork of [`sbt/ipcsocket`](https://github.com/sbt/ipcsocket). Compared to it, it mainly:
+- generates binaries on its CI rather than committing them upfront
+- generates static libraries along with dynamic ones (static libraries can be statically linked in a GraalVM native image for example)
+- pushed static and dynamic library files to Maven Central (see the `.so` / `.dylib` / `.dll` and `.a` / `.lib` files [here](https://repo1.maven.org/maven2/io/github/alexarchambault/tmp/ipcsocket/ipcsocket/1.4.1-aa-5-1/) for example)
+- fixes / tweaks minor things (tries to shutdown input / output upon close)
 
-On Unix-like systems, it uses Unix Domain Socket. The path is a filesystem path name.
-
-On Windows, IPC is implemented using Named Pipe. The path must refer to an entry in `\\?\pipe\` or `\\.\pipe\`.
-
-See unit tests for the details.
-
-### Module ID
-
-```scala
-libraryDependencies += "org.scala-sbt.ipcsocket" % "ipcsocket" % "1.4.0"
-```
-
-### Examples
-
-Check out the [examples directory](./examples).
-
-### Why not just use TCP/IP?
-
-TCP/IP is open to everyone on the network, if someone can get hold of your machine, the person could connect to it.
-This raises security concerns for some usages (like build tools) since it could lead to arbitrary code execution if used without authentication.
-
-### License
-
-Apache v2
-
-The server socket code was originally taken from Nailgun project, and client-side was added.
+This fork used to be used by Scala CLI, up to its `0.0.9` version (it switched to native domain socket support of Java 17 from `0.1.0`).
